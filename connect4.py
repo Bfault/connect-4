@@ -20,28 +20,28 @@ class Game:
     
     def _check_right(self, pos, token, power):
         x, y = pos
-        if x + 1 >= self.weight or self.board[y][x + 1] != token:
+        if x + 1 >= self.weight or self.board[y][x + 1] != token or power == 4:
             return power
         else:
             return self._check_right((x + 1, y), token, power + 1)
 
     def _check_left(self, pos, token, power):
         x, y = pos
-        if x - 1 < 0 or self.board[y][x - 1] != token:
+        if x - 1 < 0 or self.board[y][x - 1] != token or power == 4:
             return power
         else:
             return self._check_left((x - 1, y), token, power + 1)
 
     def _check_top(self, pos, token, power):
         x, y = pos
-        if y + 1 >= self.height or self.board[y + 1][x] != token:
+        if y + 1 >= self.height or self.board[y + 1][x] != token or power == 4:
             return power
         else:
             return self._check_top((x, y + 1), token, power + 1)
 
     def _check_bot(self, pos, token, power):
         x, y = pos
-        if y - 1 < 0 or self.board[y - 1][x] != token:
+        if y - 1 < 0 or self.board[y - 1][x] != token or power == 4:
             return power
         else:
             return self._check_bot((x, y - 1), token, power + 1)
@@ -52,16 +52,36 @@ class Game:
         '''
         if token == ' ' or pos == (-1, -1):
             return 1
+        
+        check_around = [
+            self._check_bot(pos, token, 1),
+            self._check_top(pos, token, 1),
+            self._check_left(pos, token, 1),
+            self._check_right(pos, token, 1)
+        ]
 
-        if self._check_right(pos, token, 1) >= 4:
-            return 0
-        if self._check_left(pos, token, 1) >= 4:
-            return 0
-        elif self._check_top(pos, token, 1) >= 4:
-            return 0
-        elif self._check_bot(pos, token, 1) >= 4:
-            return 0
+        for checking in check_around:
+            if checking >= 4:
+                return 0
         return 1
+
+    def _get_reward(self, pos, token):
+        '''
+            compute reward for given choice
+        '''
+        reward = 0
+        x, y = pos
+        check_around = [
+            self._check_bot(pos, token, 1),
+            self._check_top(pos, token, 1),
+            self._check_left(pos, token, 1),
+            self._check_right(pos, token, 1)
+        ]
+
+        for checking in check_around:
+            reward += checking
+        
+        return reward - 4
 
     def action(self, token, column):
         '''
@@ -70,7 +90,8 @@ class Game:
         for y, place in reversed(list(enumerate(self.board))):
             if place[column] == ' ':
                 place[column] = token
-                return column, y
+                reward = self._get_reward((column, y), token)
+                return (column, y), reward
 
     def display(self):
         '''
@@ -139,6 +160,7 @@ if __name__ == '__main__':
         o = -o + 1
         game.display()
         token, column = players[o].turn()
-        pos = game.action(token, column)
+        pos, reward = game.action(token, column)
+        print(reward)
     game.display()
     print("\n{player} win this game, GG!!".format(player=players[o].name))
