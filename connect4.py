@@ -161,6 +161,5 @@ if __name__ == '__main__':
         game.display()
         token, column = players[o].turn()
         pos, reward = game.action(token, column)
-        print(reward)
     game.display()
     print("\n{player} win this game, GG!!".format(player=players[o].name))
