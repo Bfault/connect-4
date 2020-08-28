@@ -46,12 +46,31 @@ class Game:
         else:
             return self._check_bot((x, y - 1), token, power + 1)
 
+    def _fill_state(self, token):
+        '''
+            fill state for bots
+        '''
+        state = []
+        for y, _ in enumerate(self.board):
+            state.append([])
+            for case in self.board[y]:
+                if case == token:
+                    state[y].append(1)
+                elif case == ' ':
+                    state[y].append(0)
+                else:
+                    state[y].append(-1)
+        return state
+
+
     def get_state(self, pos, token):
         '''
             return if game is over or not
         '''
+        state = self._fill_state(token)
+
         if token == ' ' or pos == (-1, -1):
-            return 1
+            return 1, state
         
         check_around = [
             self._check_bot(pos, token, 1),
@@ -62,8 +81,8 @@ class Game:
 
         for checking in check_around:
             if checking >= 4:
-                return 0
-        return 1
+                return 0, state
+        return 1, state
 
     def _get_reward(self, pos, token):
         '''
@@ -155,11 +174,13 @@ if __name__ == '__main__':
     o = 1
     pos = (-1, -1)
     token = ' '
+    status = 1
 
-    while game.get_state(pos, token):
+    while status:
         o = -o + 1
         game.display()
         token, column = players[o].turn()
         pos, reward = game.action(token, column)
+        status, state = game.get_state(pos, token)
     game.display()
     print("\n{player} win this game, GG!!".format(player=players[o].name))
